@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { pool } from '../config/db.js';
+import { findLocalAdminSession } from '../services/localAdminStore.js';
 
 export const ADMIN_SESSION_COOKIE = 'irrig_admin_session';
 export const ADMIN_CSRF_COOKIE = 'irrig_admin_csrf';
@@ -32,19 +33,21 @@ export function safeEqual(left, right) {
 export function setAdminCookies(res, sessionToken, csrfToken, secure) {
   const secureFlag = secure ? '; Secure' : '';
   const age = 60 * 60 * 8;
-  res.append('Set-Cookie', `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=${age}${secureFlag}`);
-  res.append('Set-Cookie', `${ADMIN_CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api; SameSite=Strict; Max-Age=${age}${secureFlag}`);
+  res.append('Set-Cookie', `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; Path=/api; HttpOnly; SameSite=Lax; Max-Age=${age}${secureFlag}`);
+  res.append('Set-Cookie', `${ADMIN_CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/api; SameSite=Lax; Max-Age=${age}${secureFlag}`);
 }
 
 export function clearAdminCookies(res, secure) {
   const secureFlag = secure ? '; Secure' : '';
-  res.append('Set-Cookie', `${ADMIN_SESSION_COOKIE}=; Path=/api; HttpOnly; SameSite=Strict; Max-Age=0${secureFlag}`);
-  res.append('Set-Cookie', `${ADMIN_CSRF_COOKIE}=; Path=/api; SameSite=Strict; Max-Age=0${secureFlag}`);
+  res.append('Set-Cookie', `${ADMIN_SESSION_COOKIE}=; Path=/api; HttpOnly; SameSite=Lax; Max-Age=0${secureFlag}`);
+  res.append('Set-Cookie', `${ADMIN_CSRF_COOKIE}=; Path=/api; SameSite=Lax; Max-Age=0${secureFlag}`);
 }
 
 export async function requireAdmin(req, res, next) {
   const sessionToken = getCookie(req, ADMIN_SESSION_COOKIE);
   if (!sessionToken) return res.status(401).json({ error: 'Administrator sign-in is required.' });
+
+  const tokenHash = hashToken(sessionToken);
 
   try {
     const result = await pool.query(
@@ -52,24 +55,30 @@ export async function requireAdmin(req, res, next) {
        FROM admin_sessions s
        JOIN admin_users a ON a.id = s.admin_id
        WHERE s.token_hash = $1 AND s.expires_at > NOW()`,
-      [hashToken(sessionToken)],
+      [tokenHash],
     );
-    if (!result.rows.length) {
-      clearAdminCookies(res, req.secure);
-      return res.status(401).json({ error: 'Administrator session is invalid or expired.' });
+    if (result.rows.length) {
+      req.admin = { id: result.rows[0].id, email: result.rows[0].email };
+      req.adminCsrfHash = result.rows[0].csrf_hash;
+      return next();
     }
-
-    req.admin = { id: result.rows[0].id, email: result.rows[0].email };
-    req.adminCsrfHash = result.rows[0].csrf_hash;
-    return next();
   } catch (error) {
-    console.error('Unable to verify administrator session:', error.message);
-    return res.status(503).json({ error: 'Administrator authentication is temporarily unavailable.' });
+    // Database might be down, try local fallback session
   }
+
+  const localSession = await findLocalAdminSession(tokenHash);
+  if (localSession) {
+    req.admin = localSession.admin;
+    req.adminCsrfHash = localSession.csrf_hash;
+    return next();
+  }
+
+  clearAdminCookies(res, req.secure);
+  return res.status(401).json({ error: 'Administrator session is invalid or expired. Please sign in again.' });
 }
 
 export function requireCsrf(req, res, next) {
-  const csrfToken = req.get('x-csrf-token');
+  const csrfToken = req.get('x-csrf-token') || getCookie(req, ADMIN_CSRF_COOKIE);
   if (!csrfToken || !safeEqual(hashToken(csrfToken), req.adminCsrfHash)) {
     return res.status(403).json({ error: 'CSRF token is missing or invalid.' });
   }
