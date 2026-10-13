@@ -768,3 +768,9 @@ body, .portal-shell, .portal-workspace { background-color: #f3f6f5; }
 .portal-risk-scores, .portal-risk-scores > div { min-width: 0; width: 100%; box-sizing: border-box; }
 .portal-risk-scores > div > div { flex: 1 1 auto; }
 .portal-risk-scores strong { overflow-wrap: anywhere; }
+
+
+.portal-admin-text-link { display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 13px; padding: 4px 0; border: 0; color: #28724f; background: transparent; font-size: 11px; font-weight: 750; }
+.portal-admin-text-link:hover { color: #164d34; text-decoration: underline; }
+.portal-admin-text-link:disabled { cursor: wait; opacity: .6; }
+.portal-admin-success { margin: 0; padding: 9px 10px; border: 1px solid #cde7d4; border-radius: 7px; color: #276442; background: #f0faf2; font-size: 11px; line-height: 1.5; }
