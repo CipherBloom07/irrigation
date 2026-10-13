@@ -40,4 +40,9 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    host: '0.0.0.0',
+    port: Number(process.env.VITE_PREVIEW_PORT || 4173),
+    strictPort: true,
+  },
 });
