@@ -124,7 +124,7 @@ export async function initializeDatabase() {
   `);
 
   const feedSeeds = [
-    ['weather', 'WeatherAPI current weather', 'weather', process.env.WEATHER_API_URL ?? null],
+    ['weather', 'Open-Meteo weather forecast (Harare)', 'weather', process.env.WEATHER_API_URL || 'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335&current=temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m,surface_pressure,weather_code&hourly=temperature_2m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration&timezone=Africa%2FHarare'],
     ['telemetry', 'Irrigation telemetry sensors', 'telemetry', process.env.TELEMETRY_API_URL ?? null],
     ['satellite', 'Copernicus Sentinel-2 catalogue (global)', 'satellite', process.env.SATELLITE_GIS_API_URL || 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name%20eq%20%27SENTINEL-2%27&$orderby=ContentDate/Start%20desc&$top=10'],
     ['agronomy', 'GMB & local market feed', 'agronomy', process.env.AGRONOMY_API_URL ?? null],

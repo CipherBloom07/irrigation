@@ -112,10 +112,12 @@ export const getTelemetry = async (req, res) => {
       : null,
     gmb_announcements: refreshed.feeds.gmb?.data?.posts ?? [],
     sources,
-    mode: validLiveFields ? 'live' : 'baseline',
-    status: validLiveFields ? (validLiveFields === 8 ? 'ONLINE' : 'PARTIAL') : 'BASELINE',
-    data_source: validLiveFields
-      ? feedsForTelemetry.filter(({ feed }) => telemetryFeeds.has(feed?.key)).map(({ feed }) => feed.name).join(', ')
+    mode: validSensorFields.length ? 'live' : 'baseline',
+    status: validSensorFields.length
+      ? (validSensorFields.length === 3 ? 'ONLINE' : 'PARTIAL')
+      : 'BASELINE',
+    data_source: validSensorFields.length
+      ? feedsForTelemetry.filter(({ feed }) => feed?.key === 'telemetry' && telemetryFeeds.has(feed?.key)).map(({ feed }) => feed.name).join(', ')
       : baseline.data_source,
     last_synced_at: refreshed.lastSyncedAt,
   };

@@ -126,7 +126,7 @@ npm run preview
 - A public Copernicus Sentinel-2 catalogue is synchronized without credentials and shown as global imagery metadata only; it is not filtered to scheme locations and does not populate scheme coordinates. For site-specific GIS overlays, configure `SATELLITE_GIS_API_URL` with a provider returning scheme records matched by `code`, `id`, or `name`.
 - The public GMB announcements API is shown as dated official notices. Its producer-price notices may contain images rather than machine-readable prices; the portal does not extract or infer numeric market prices from them. Configure `AGRONOMY_API_URL` with a structured, authorized scheme/market feed for per-scheme prices and details.
 - Zimbabwe cereal-yield observations are fetched from the World Bank Open Data API and shown as dated national historical context on the Agronomy page, not as live scheme telemetry. A reliable public FAOSTAT API response could not be verified; configure a documented endpoint through `FAO_API_URL` when available.
-- Live irrigation sensors still require the actual site gateway/provider endpoint and credentials (`TELEMETRY_API_URL` and `TELEMETRY_API_TOKEN`). Public satellite and climate products are not represented as sensor readings.
+- Weather forecasts use Open-Meteo by default without an API key for eligible non-commercial use; attribution and usage limits apply. See https://open-meteo.com/ for current terms. The weather feed is forecast context, not an irrigation sensor measurement. Live irrigation sensors require an actual site gateway/provider endpoint and credentials (`TELEMETRY_API_URL` and `TELEMETRY_API_TOKEN`); the app does not invent sensor readings when no sensor gateway is configured.
 - Visible dashboards refresh scheme records every minute so administrator changes from other sessions appear promptly. Configured external feeds are cached for up to five minutes to limit provider requests; manual refresh forces a fresh source sync. Hidden browser tabs pause polling and force a refresh when visible again.
 - For production, set `CORS_ORIGINS` to the exact HTTPS origins serving the dashboard, provide a secure PostgreSQL `DATABASE_URL`, store secrets in the deployment's secret manager, and terminate HTTPS at a trusted reverse proxy. Set `TRUST_PROXY=1` only when a trusted proxy overwrites forwarded headers.
 - Scheme writes require an administrator session. On first startup, set a strong `ADMIN_BOOTSTRAP_TOKEN` in the server environment; sign in through **Admin sign in** to create the first administrator, then remove the bootstrap token from the runtime environment. Admin passwords are scrypt-hashed, sessions are stored as token hashes in PostgreSQL, and writes require a CSRF token. The public scheme registry remains read-only.
@@ -144,14 +144,26 @@ cd client
 npx vite build
 ```
 
-### API not responding
+### API not responding / Vite `ECONNREFUSED` proxy errors
 
-Check that the backend is running:
+Vite serves the frontend; it does not start the Express API. Keep two terminals open.
 
-```bash
-cd server
-npm start
+**Terminal 1 — backend API:**
+
+```powershell
+cd C:\\Users\\2025\\Downloads\\irrig\\server
+npm install
+npm run dev
 ```
+
+Wait for `Irrigation API listening on http://localhost:5000` (or `https://localhost:5000` if local HTTPS is enabled). **Terminal 2 — frontend:**
+
+```powershell
+cd C:\\Users\\2025\\Downloads\\irrig\\client
+npm run dev -- --host 0.0.0.0 --port 4173
+```
+
+Test the API at `http://localhost:5000/api/health`. It should return `{"ok":true,"status":"healthy"}`. If it does not, check the backend terminal for startup errors and verify port 5000 is free. If the backend reports HTTPS, use `https://localhost:5000/api/health` and start Vite with the same local HTTPS setup. `ECONNREFUSED` means Vite cannot connect to the backend target; it is not a frontend compile error.
 
 ### Database connection issues
 
