@@ -81,18 +81,21 @@ export async function resetAdminPassword(req, res) {
 
     const salt = randomBytes(16).toString('hex');
     const passwordHash = (await scrypt(password, salt, 64)).toString('hex');
-    await pool.query('BEGIN');
+    const client = await pool.connect();
     try {
-      await pool.query(
+      await client.query('BEGIN');
+      await client.query(
         'UPDATE admin_users SET password_hash = $1, password_salt = $2 WHERE id = $3',
         [passwordHash, salt, reset.admin_id],
       );
-      await pool.query('DELETE FROM admin_sessions WHERE admin_id = $1', [reset.admin_id]);
-      await pool.query('DELETE FROM admin_password_resets WHERE admin_id = $1', [reset.admin_id]);
-      await pool.query('COMMIT');
+      await client.query('DELETE FROM admin_sessions WHERE admin_id = $1', [reset.admin_id]);
+      await client.query('DELETE FROM admin_password_resets WHERE admin_id = $1', [reset.admin_id]);
+      await client.query('COMMIT');
     } catch (error) {
-      await pool.query('ROLLBACK').catch(() => {});
+      await client.query('ROLLBACK').catch(() => {});
       throw error;
+    } finally {
+      client.release();
     }
     return res.json({ message: 'Password updated. Sign in with your new password.' });
   } catch (error) {
