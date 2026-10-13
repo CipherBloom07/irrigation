@@ -144,14 +144,26 @@ cd client
 npx vite build
 ```
 
-### API not responding
+### API not responding / Vite `ECONNREFUSED` proxy errors
 
-Check that the backend is running:
+Vite serves the frontend; it does not start the Express API. Keep two terminals open.
 
-```bash
-cd server
-npm start
+**Terminal 1 — backend API:**
+
+```powershell
+cd C:\\Users\\2025\\Downloads\\irrig\\server
+npm install
+npm run dev
 ```
+
+Wait for `Irrigation API listening on http://localhost:5000` (or `https://localhost:5000` if local HTTPS is enabled). **Terminal 2 — frontend:**
+
+```powershell
+cd C:\\Users\\2025\\Downloads\\irrig\\client
+npm run dev -- --host 0.0.0.0 --port 4173
+```
+
+Test the API at `http://localhost:5000/api/health`. It should return `{"ok":true,"status":"healthy"}`. If it does not, check the backend terminal for startup errors and verify port 5000 is free. If the backend reports HTTPS, use `https://localhost:5000/api/health` and start Vite with the same local HTTPS setup. `ECONNREFUSED` means Vite cannot connect to the backend target; it is not a frontend compile error.
 
 ### Database connection issues
 
