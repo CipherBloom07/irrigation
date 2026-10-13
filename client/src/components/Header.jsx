@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Database, Download, LogIn, LogOut, MapPin, Plus, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
+import { Activity, Database, Download, LogIn, LogOut, MapPin, Menu, Plus, RefreshCw, RotateCcw, Search, ShieldCheck } from 'lucide-react';
 
 export default function Header({
-  search, setSearch, onAddClick, onExportCSV, onReset, schemeCount,
+  search, setSearch, onAddClick, onExportCSV, onReset, schemeCount, onMenuClick,
   isSyncing, lastSyncedAt, telemetryStatus, gisOnline, onRefresh,
   admin, onAdminClick, onAdminLogout,
 }) {
@@ -20,6 +20,10 @@ export default function Header({
   const telemetryLabel = telemetryStatus === 'ONLINE' ? 'ONLINE' : telemetryStatus === 'PARTIAL' ? 'PARTIAL' : 'BASELINE';
 
   return <header className="portal-header">
+    <div className="portal-mobile-topbar">
+      <button type="button" className="portal-mobile-menu" onClick={onMenuClick} aria-label="Open navigation menu"><Menu size={21} /><span>Irrigation Intelligence</span></button>
+      <span className={`portal-mobile-status ${telemetryStatus === "BASELINE" ? "baseline" : telemetryStatus === "PARTIAL" ? "partial" : "live"}`}>{telemetryLabel}</span>
+    </div>
     <div className="portal-government-bar">
       <div className="portal-government-identity">
         <img className="portal-ministry-image" src="/images/ministry-land-agriculture-logo.png" alt="Zimbabwe coat of arms and Ministry of Lands, Agriculture, Fisheries, Water and Rural Development" />
