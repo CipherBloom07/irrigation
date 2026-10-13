@@ -69,37 +69,37 @@ export async function resetAdminPassword(req, res) {
     return res.status(400).json({ error: 'The reset link is invalid or expired. Request a new one.' });
   }
 
+  const salt = randomBytes(16).toString('hex');
+  const passwordHash = (await scrypt(password, salt, 64)).toString('hex');
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
     const tokenHash = hashToken(token);
-    const result = await pool.query(
+    const result = await client.query(
       `SELECT admin_id FROM admin_password_resets
-       WHERE token_hash = $1 AND expires_at > NOW()`,
+       WHERE token_hash = $1 AND expires_at > NOW()
+       FOR UPDATE`,
       [tokenHash],
     );
     const reset = result.rows[0];
-    if (!reset) return res.status(400).json({ error: 'The reset link is invalid or expired. Request a new one.' });
-
-    const salt = randomBytes(16).toString('hex');
-    const passwordHash = (await scrypt(password, salt, 64)).toString('hex');
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query(
-        'UPDATE admin_users SET password_hash = $1, password_salt = $2 WHERE id = $3',
-        [passwordHash, salt, reset.admin_id],
-      );
-      await client.query('DELETE FROM admin_sessions WHERE admin_id = $1', [reset.admin_id]);
-      await client.query('DELETE FROM admin_password_resets WHERE admin_id = $1', [reset.admin_id]);
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw error;
-    } finally {
-      client.release();
+    if (!reset) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'The reset link is invalid or expired. Request a new one.' });
     }
+
+    await client.query(
+      'UPDATE admin_users SET password_hash = $1, password_salt = $2 WHERE id = $3',
+      [passwordHash, salt, reset.admin_id],
+    );
+    await client.query('DELETE FROM admin_sessions WHERE admin_id = $1', [reset.admin_id]);
+    await client.query('DELETE FROM admin_password_resets WHERE admin_id = $1', [reset.admin_id]);
+    await client.query('COMMIT');
     return res.json({ message: 'Password updated. Sign in with your new password.' });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Unable to reset administrator password:', error.message);
     return res.status(500).json({ error: 'Unable to reset the password right now. Please try again.' });
+  } finally {
+    client.release();
   }
 }
