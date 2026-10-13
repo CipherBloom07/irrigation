@@ -109,12 +109,28 @@ npm run preview
 
 ### Administrator access
 - `GET /api/admin/status`
-- `POST /api/admin/setup` (one-time, operator bootstrap token required)
+- `POST /api/admin/setup` (one-time setup; configure `ADMIN_BOOTSTRAP_TOKEN` to require a token)
 - `POST /api/admin/login`
+- `POST /api/admin/forgot-password` (generic response; email is sent only when reset mail settings are configured)
+- `POST /api/admin/reset-password` (single-use reset token, expires after 30 minutes)
 - `POST /api/admin/logout`
 
 ### Telemetry
 - `GET /api/telemetry`
+
+### Administrator password recovery
+
+The sign-in dialog includes **Forgot password?**. Password recovery uses a random single-use token stored only as a SHA-256 hash in PostgreSQL, expires after 30 minutes, and invalidates existing administrator sessions when the password changes. Responses do not reveal whether an email belongs to an administrator.
+
+Configure these values in the backend environment (never commit real secrets):
+
+```env
+RESEND_API_KEY=your_resend_api_key
+ADMIN_RESET_FROM_EMAIL=verified-sender@your-domain.example
+APP_BASE_URL=https://your-dashboard.example
+```
+
+Email delivery uses the Resend API, so the sender must be verified with the provider. In production, `APP_BASE_URL` must use HTTPS. Until all three settings are configured and PostgreSQL is available, the endpoint deliberately returns a generic response but cannot deliver a reset email. After setting the variables, restart the backend so the reset table is created by database initialization.
 
 ## Notes
 
