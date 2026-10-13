@@ -766,7 +766,7 @@ export default function App() {
   const [weatherRefreshError, setWeatherRefreshError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingScheme, setEditingScheme] = useState(null);
-  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(() => new URLSearchParams(window.location.search).has('adminReset'));
   const [adminStatus, setAdminStatus] = useState({ setupRequired: false, admin: null });
   const [notice, setNotice] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);

@@ -32,6 +32,18 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_admin_sessions_expiry
       ON admin_sessions(expires_at)
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_password_resets (
+      token_hash TEXT PRIMARY KEY,
+      admin_id BIGINT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_admin_password_resets_expiry
+      ON admin_password_resets(expires_at)
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schemes (

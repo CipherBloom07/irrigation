@@ -93,6 +93,30 @@ async function authenticateAdmin(path, credentials, signal) {
   return result;
 }
 
+export async function requestAdminPasswordReset(email, { signal } = {}) {
+  const res = await fetch(`${API_BASE}/admin/forgot-password`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+    signal,
+  });
+  if (!res.ok) throw await responseError(res, 'Unable to request a password reset');
+  return res.json();
+}
+
+export async function resetAdminPassword(token, password, { signal } = {}) {
+  const res = await fetch(`${API_BASE}/admin/reset-password`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+    signal,
+  });
+  if (!res.ok) throw await responseError(res, 'Unable to reset administrator password');
+  return res.json();
+}
+
 export async function logoutAdmin({ signal } = {}) {
   const res = await fetch(`${API_BASE}/admin/logout`, {
     method: 'POST',
