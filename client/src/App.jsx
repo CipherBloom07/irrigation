@@ -757,6 +757,7 @@ function AssessmentList({ schemes, openReports, toggle, query }) {
 }
 
 export default function App() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Executive Dashboard');
   const [search, setSearch] = useState('');
   const [schemes, setSchemes] = useState(defaultSchemes);
@@ -964,9 +965,9 @@ export default function App() {
     'Assessment Reports': <AssessmentPage schemes={filteredSchemes} />,
   }[activeTab];
   return <div className="portal-shell">
-    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} schemeCount={schemes.length} />
+    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} schemeCount={schemes.length} mobileNavOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
     <div className="portal-workspace">
-      <Header search={search} setSearch={setSearch} onAddClick={() => setIsModalOpen(true)} onExportCSV={exportCSV} onReset={reset} schemeCount={schemes.length} isSyncing={isSyncing} lastSyncedAt={lastSyncedAt} telemetryStatus={telemetryStatus} gisOnline={gisOnline} onRefresh={() => refreshDashboard({ force: true })} admin={adminStatus.admin} onAdminClick={openAdminAccess} onAdminLogout={signOutAdmin} />
+      <Header onMenuClick={() => setMobileNavOpen((open) => !open)} search={search} setSearch={setSearch} onAddClick={() => setIsModalOpen(true)} onExportCSV={exportCSV} onReset={reset} schemeCount={schemes.length} isSyncing={isSyncing} lastSyncedAt={lastSyncedAt} telemetryStatus={telemetryStatus} gisOnline={gisOnline} onRefresh={() => refreshDashboard({ force: true })} admin={adminStatus.admin} onAdminClick={openAdminAccess} onAdminLogout={signOutAdmin} />
       <main className={`portal-main${activeTab === 'Executive Dashboard' ? ' portal-main-dashboard' : ''}`}>
         <div className="portal-page-transition" key={activeTab}>
           {notice && <div className="portal-notice" role="status">{notice}</div>}
