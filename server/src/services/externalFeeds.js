@@ -4,12 +4,12 @@ import { pool } from '../config/db.js';
 const FEED_CACHE_MS = 3 * 60_000;
 
 const OPEN_METEO_ZIMBABWE_URL =
-  'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335&current=temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m,surface_pressure,weather_code&hourly=temperature_2m,precipitation_probability,soil_moisture_0_to_1cm&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration&timezone=Africa%2FHarare';
+  'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335&current=temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m,surface_pressure,weather_code&hourly=temperature_2m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration&timezone=Africa%2FHarare';
 
 const feedDefinitions = [
   {
     key: 'weather',
-    name: 'Open-Meteo & WeatherAPI (Live Zimbabwe Meteorological Service)',
+    name: 'Open-Meteo Weather Forecast (Harare, Zimbabwe)',
     category: 'weather',
     env: 'WEATHER_API_URL',
     token: 'WEATHER_API_KEY',
@@ -17,11 +17,10 @@ const feedDefinitions = [
   },
   {
     key: 'telemetry',
-    name: 'Live Field Telemetry & Soil Moisture Sensors',
+    name: 'Irrigation Field Sensors (not configured)',
     category: 'telemetry',
     env: 'TELEMETRY_API_URL',
     token: 'TELEMETRY_API_TOKEN',
-    defaultUrl: OPEN_METEO_ZIMBABWE_URL,
   },
   {
     key: 'satellite',
@@ -143,16 +142,13 @@ async function fetchFeed(feed) {
       const hourly = payload.hourly || {};
       const daily = payload.daily || {};
 
-      const temp = current.temperature_2m ?? 26.5;
-      const humidity = current.relative_humidity_2m ?? 35;
-      const windKph = Math.round((current.wind_speed_10m ?? 8.5) * 10) / 10;
-      const pressure = current.surface_pressure ?? 865;
-      const rainRisk = hourly.precipitation_probability?.[0] ?? Math.round((current.precipitation ?? 0) > 0 ? 80 : 15);
-      const precipitation = current.precipitation ?? 0;
-      // Convert m3/m3 to percentage (0.26 -> 26%)
-      const rawMoisture = hourly.soil_moisture_0_to_1cm?.[0] ?? 0.28;
-      const soilMoisturePct = Math.round(rawMoisture > 1 ? rawMoisture : rawMoisture * 100);
-      const dailyEt0 = daily.et0_fao_evapotranspiration?.[0] ?? 5.2;
+      const temp = current.temperature_2m ?? null;
+      const humidity = current.relative_humidity_2m ?? null;
+      const windKph = current.wind_speed_10m == null ? null : Math.round(current.wind_speed_10m * 10) / 10;
+      const pressure = current.surface_pressure ?? null;
+      const rainRisk = hourly.precipitation_probability?.[0] ?? null;
+      const precipitation = current.precipitation ?? null;
+      const dailyEt0 = daily.et0_fao_evapotranspiration?.[0] ?? null;
 
       if (feed.key === 'weather') {
         data = {
@@ -177,19 +173,6 @@ async function fetchFeed(feed) {
             humidity: humidity,
             chance_of_rain: rainRisk,
             precip_mm: precipitation,
-          },
-        };
-      } else if (feed.key === 'telemetry') {
-        data = {
-          provider: 'Live Agro-Telemetry & Field Moisture Network',
-          current: {
-            temperature: temp,
-            soil_moisture: soilMoisturePct,
-            wind_speed: windKph,
-            rain_risk: rainRisk,
-            water_flow: 48.5,
-            rainfall: precipitation,
-            evapotranspiration: dailyEt0,
           },
         };
       }
