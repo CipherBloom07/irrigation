@@ -6,6 +6,7 @@ import {
   logoutAdmin,
 } from '../controllers/adminAuthController.js';
 import { requireAdmin, requireCsrf } from '../middleware/adminAuth.js';
+import { requestAdminPasswordReset, resetAdminPassword } from '../controllers/adminPasswordResetController.js';
 
 const router = express.Router();
 const attempts = new Map();
@@ -40,6 +41,8 @@ function limitAuthenticationAttempts(req, res, next) {
 router.get('/status', getAdminStatus);
 router.post('/setup', limitAuthenticationAttempts, bootstrapAdmin);
 router.post('/login', limitAuthenticationAttempts, loginAdmin);
+router.post('/forgot-password', limitAuthenticationAttempts, requestAdminPasswordReset);
+router.post('/reset-password', limitAuthenticationAttempts, resetAdminPassword);
 router.post('/logout', requireAdmin, requireCsrf, logoutAdmin);
 
 export default router;
