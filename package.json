@@ -1,0 +1,14 @@
+{
+  "name": "irrigation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run build --prefix client"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  }
+}
