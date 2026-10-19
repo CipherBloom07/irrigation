@@ -66,6 +66,8 @@
   letter-spacing: .15px;
   text-align: right;
 }
+.page-purpose-banner-note a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+.page-purpose-banner-note a:focus-visible { outline: 2px solid #d3f6db; outline-offset: 2px; }
 @media (max-width: 640px) {
   .page-purpose-banner { min-height: 205px; border-radius: 13px; }
   .page-purpose-banner-content { padding: 24px 19px 38px; }
