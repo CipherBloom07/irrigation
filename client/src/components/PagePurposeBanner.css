@@ -1,0 +1,81 @@
+/* Shared page-specific visual banners. Isolated so existing page layouts remain intact. */
+.page-purpose-banner {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 190px;
+  overflow: hidden;
+  align-items: center;
+  margin: 0 0 22px;
+  border: 1px solid #dce8df;
+  border-radius: 16px;
+  background: #173b2d;
+  box-shadow: 0 8px 24px #173c2812;
+}
+.page-purpose-banner-image,
+.page-purpose-banner-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.page-purpose-banner-image {
+  z-index: -2;
+  object-fit: cover;
+  object-position: center 48%;
+}
+.page-purpose-banner-shade {
+  z-index: -1;
+  background: linear-gradient(90deg, #10291ff0 0%, #173b2dd9 43%, #173b2d75 75%, #173b2d38 100%);
+}
+.page-purpose-banner-content {
+  max-width: 700px;
+  padding: 26px 30px 34px;
+  color: #fff;
+}
+.page-purpose-banner-content > span {
+  display: block;
+  margin-bottom: 8px;
+  color: #c9f3d5;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 1.7px;
+}
+.page-purpose-banner-content h3 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(21px, 2.4vw, 30px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.35px;
+  text-wrap: balance;
+}
+.page-purpose-banner-content p {
+  max-width: 580px;
+  margin: 10px 0 0;
+  color: #edf7ef;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.page-purpose-banner-note {
+  position: absolute;
+  right: 13px;
+  bottom: 9px;
+  color: #ffffffc9;
+  font-size: 8px;
+  letter-spacing: .15px;
+  text-align: right;
+}
+@media (max-width: 640px) {
+  .page-purpose-banner { min-height: 205px; border-radius: 13px; }
+  .page-purpose-banner-content { padding: 24px 19px 38px; }
+  .page-purpose-banner-content h3 { font-size: 23px; }
+  .page-purpose-banner-content p { font-size: 11px; }
+  .page-purpose-banner-shade {
+    background: linear-gradient(90deg, #10291ff2 0%, #173b2ddc 65%, #173b2d8c 100%);
+  }
+  .page-purpose-banner-note { left: 12px; right: 12px; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-purpose-banner-image { scroll-behavior: auto; }
+}
