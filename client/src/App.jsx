@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import GisMap from './components/GisMap';
 import DashboardSlideshow from './components/DashboardSlideshow';
+import PagePurposeBanner from './components/PagePurposeBanner';
 import AddSchemeModal from './components/AddSchemeModal';
 import AdminAccessModal from './components/AdminAccessModal';
 import PortalAssistant from './components/PortalAssistant';
@@ -473,7 +474,7 @@ function TrendChart({ telemetry = {} }) {
 }
 
 function GisPage({ schemes }) {
-  return <><PageHeading icon={MapPin} title="National GIS Spatial Telemetry & Satellite Mapping" description="Interactive irrigation scheme locations, operational status, and spatial telemetry across Zimbabwe" /><GisMap schemes={schemes} expanded /></>;
+  return <><PageHeading icon={MapPin} title="National GIS Spatial Telemetry & Satellite Mapping" description="Interactive irrigation scheme locations, operational status, and spatial telemetry across Zimbabwe" /><PagePurposeBanner page="gis" /><GisMap schemes={schemes} expanded /></>;
 }
 
 function WaterPage({ telemetry, schemes }) {
@@ -498,6 +499,7 @@ function WaterPage({ telemetry, schemes }) {
   ];
   return <>
     <PageHeading icon={Droplets} title="Water Resources, Telemetry & Hydrology Monitoring" description="Reported telemetry with baseline planning values clearly identified" />
+    <PagePurposeBanner page="water" />
     <p className="portal-data-note" role="status">{telemetry.mode === 'live' ? `${telemetry.status === 'ONLINE' ? 'LIVE / ONLINE' : 'PARTIAL · some fields use baseline values'} · ${telemetry.data_source || 'Connected sources'}` : 'BASELINE · no live telemetry measurements are available'}</p>
     <div className="portal-kpis portal-kpis-four">{values.map(([label, value, note, Icon, color]) => <MetricCard key={label} label={label} value={value} note={note} icon={Icon} color={color} className={label === 'WATER FLOW' && waterFlowIsLive ? 'portal-metric-flow-live' : ''} />)}</div>
     <div className="portal-grid-two">
@@ -635,6 +637,7 @@ function InfrastructurePage({ schemes }) {
   });
   return <>
     <PageHeading icon={Wrench} title="Infrastructure Health Audit & O&M Fund Compliance" description="Engineering asset rating, headworks functionality, Night Storage Dam audit, and maintenance fund status" />
+    <PagePurposeBanner page="infrastructure" />
     <div className="portal-gauges">{assetGauges.map(([label, value, goodCount, ratedCount]) => <Card key={label}><span>{label}</span><div className="portal-gauge" style={{ '--gauge': `${(value ?? 0) * 3.6}deg` }}><strong>{value === null ? '—' : `${value}%`}</strong></div><small>{ratedCount ? `${goodCount}/${ratedCount} rated Good` : 'No ratings reported'}</small></Card>)}</div>
     <Card><PanelTitle icon={Database}>National Engineering Asset Condition Heatmap</PanelTitle><div className="portal-table-scroll"><table className="portal-table portal-heatmap"><thead><tr>{['SCHEME', 'HEADWORKS', 'CONVEYANCE', 'NIGHT STORAGE DAM', 'INFIELD SYSTEM', 'PERIMETER FENCE', 'ACCESS ROAD', 'O&M FUND', 'LAST REHAB'].map((cell) => <th key={cell}>{cell}</th>)}</tr></thead><tbody>{rows.map(({ scheme, values, fund }) => <tr key={scheme.id}><td><strong>{scheme.name}</strong><small>{scheme.province}</small></td>{[...values, fund, scheme.rehab || '—'].map((cell, index) => <td key={`${scheme.id}-${index}`}><span className={`heat-${String(cell).toLowerCase().replace('/', '-')}`}>{cell}</span></td>)}</tr>)}</tbody></table></div></Card>
     <div className="portal-grid-two">
@@ -699,6 +702,7 @@ function SustainabilityPage({ schemes }) {
   const missingMarketCount = schemes.filter((scheme) => !scheme.market || /incomplete|missing/i.test(scheme.market_analysis || '')).length;
   return <>
     <PageHeading icon={ShieldAlert} title="Sustainability & Operational Risk Assessment" description="Strategic bottleneck analysis, climate risk vulnerability, and institutional sustainability priorities" />
+    <PagePurposeBanner page="sustainability" />
     <div className="portal-registry-summary">{[['PORTFOLIO RISK SCORE', `${portfolioRisk}/100`], ['HIGH-RISK SCHEMES', `${highRiskCount} of ${schemes.length}`], ['FINANCING FLAGS', financingCount], ['MISSING MARKET STRATEGIES', missingMarketCount]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
     <div className="portal-risk-grid">{challenges.slice(0, 8).map(([risk, count, affected], index) => {
       const severity = count >= 3 ? 'high' : count >= 2 ? 'warning' : 'normal';
@@ -727,6 +731,7 @@ function RegistryPage({ schemes, admin, onAdd, onEdit, onDelete }) {
   const filtered = schemes.filter((scheme) => (!province || scheme.province === province) && (!status || scheme.status === status) && (!source || scheme.source === source));
   return <>
     <PageHeading icon={Database} title="National Irrigation Scheme Registry" description="Verified scheme records, operational classifications, and water resource assignments" action={admin && <button type="button" className="portal-button portal-button-primary" onClick={onAdd}><Plus size={17} /> Add scheme</button>} />
+    <PagePurposeBanner page="registry" />
     <Card className="portal-registry-intro"><div><b>National Irrigation Schemes</b><p>Water Survey Baseline 2026 · Provincial & district registry</p></div><span>{schemes.length} SCHEMES</span></Card>
     <div className="portal-registry-summary">{[['TOTAL SCHEMES', schemes.length], ['FULLY FUNCTIONAL', `${schemes.filter((s) => s.status.toLowerCase().includes('fully')).length} / ${schemes.length}`], ['EQUIPPED AREA', `${schemes.reduce((n, s) => n + Number(s.equipped_area || 0), 0).toLocaleString()} Ha`], ['BENEFICIARIES', schemes.reduce((n, s) => n + Number(s.beneficiaries || 0), 0).toLocaleString()]].map(([a,b]) => <div key={a}><span>{a}</span><strong>{b}</strong></div>)}</div>
     <Card><PanelTitle icon={Database} aside={<span className="portal-muted">{admin ? 'Admin CRUD enabled · Create, view, edit & delete' : 'Read-only registry'} · Showing {filtered.length} of {schemes.length}</span>}>Scheme Registry Records</PanelTitle><div className="portal-registry-filters">{[['Province', province, setProvince, provinces], ['Status', status, setStatus, statuses], ['Water source', source, setSource, sources]].map(([label, value, setter, options]) => <label key={label}>{label}<select value={value} onChange={(event) => setter(event.target.value)}><option value="">All {label.toLowerCase()}s</option>{options.map((option) => <option key={option}>{option}</option>)}</select></label>)}</div><SchemeTable schemes={filtered} admin={admin} onEdit={onEdit} onDelete={onDelete} /></Card>
@@ -740,6 +745,7 @@ function AssessmentPage({ schemes }) {
   const printReports = () => window.print();
   return <>
     <PageHeading icon={FileText} title="Scheme Assessment Reports" description="Detailed per-scheme field assessment printable reports — Water Survey Baseline 2026" action={<button className="portal-button portal-button-primary" onClick={printReports}><Printer size={17} /> Print All Reports</button>} />
+    <PagePurposeBanner page="reports" />
     <div className="portal-report-kpis">{[['TOTAL SCHEMES', schemes.length, 'neutral'], ['FULLY FUNCTIONAL', `${schemes.filter((s) => s.status.toLowerCase().includes('fully')).length} / ${schemes.length}`, 'green'], ['TOTAL AREA (HA)', schemes.reduce((n, s) => n + Number(s.equipped_area || 0), 0).toLocaleString(), 'blue'], ['BENEFICIARIES', schemes.reduce((n, s) => n + Number(s.beneficiaries || 0), 0).toLocaleString(), 'orange']].map(([label, value, tone]) => <div className={`report-kpi ${tone}`} key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
     <label className="portal-report-search"><Search size={18} /><input value={query} placeholder="Search reports by scheme name, province, or district..." onChange={(event) => setQuery(event.target.value)} /></label>
     <AssessmentList schemes={schemes} openReports={openReports} toggle={toggle} query={query} />
