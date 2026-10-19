@@ -20,8 +20,10 @@ const pageVisuals = {
     eyebrow: 'ENGINEERING & ASSET HEALTH',
     title: 'Infrastructure that keeps schemes operating',
     description: 'Assess headworks, conveyance systems, storage, infield equipment and maintenance needs.',
-    image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1600&q=82',
-    alt: 'Engineering professional working with technical equipment',
+    image: 'https://www.novibechej.com/images/tisa/ilustracija_1507251.jpg',
+    alt: 'Concrete irrigation pumping station beside a canal, with large water pipes and safety railings',
+    sourceUrl: 'https://www.novibechej.com/en/chronicle-of-water-management-in-vojvodina/water-supply-from-the-basic-canal-network-okm-potentials-challenges-and-development-opportunities.html',
+    sourceLabel: 'Image source: Novibecej water-management article',
   },
   sustainability: {
     eyebrow: 'RESILIENCE & RISK',
@@ -59,7 +61,7 @@ export default function PagePurposeBanner({ page }) {
         <h3>{visual.title}</h3>
         <p>{visual.description}</p>
       </div>
-      <small className="page-purpose-banner-note">Illustrative context imagery · not a live or scheme-specific photograph</small>
+      <small className="page-purpose-banner-note">Illustrative context imagery · not a live or scheme-specific photograph{visual.sourceUrl ? <> · <a href={visual.sourceUrl} target="_blank" rel="noreferrer">{visual.sourceLabel}</a></> : null}</small>
     </section>
   );
 }
