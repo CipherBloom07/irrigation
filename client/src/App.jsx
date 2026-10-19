@@ -7,6 +7,7 @@ import {
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import GisMap from './components/GisMap';
+import DashboardSlideshow from './components/DashboardSlideshow';
 import AddSchemeModal from './components/AddSchemeModal';
 import AdminAccessModal from './components/AdminAccessModal';
 import PortalAssistant from './components/PortalAssistant';
@@ -372,6 +373,7 @@ function ExecutiveDashboard({ schemes, telemetry, weather, weatherRefreshError, 
   ];
   return <>
     <PageHeading icon={BarChart3} title="Government Executive Dashboard Overview" description="National High-Level Telemetry & Operational Summary for Zimbabwe Smallholder Schemes" action={<div className="portal-heading-actions">{(attentionSchemes.length > 0 || urgentTelemetry) && <button className="portal-alert-summary" onClick={() => setActiveTab('Sustainability & Risks')}><AlertTriangle size={15} />{urgentTelemetry ? 'Telemetry alert' : `${attentionSchemes.length} schemes need attention`}</button>}<button className="portal-button portal-button-primary" onClick={onViewRegistry}>View Full Registry <ArrowRight size={17} /></button></div>} />
+    <DashboardSlideshow />
     <div className="portal-climate">
       <div className="portal-weather">
         <div className="portal-weather-icon"><WeatherIcon size={35} strokeWidth={1.7} aria-hidden="true" /></div><div><div className="portal-eyebrow">{weather?.location?.name || 'Zimbabwe'} WEATHER <span className="live-pill">{weatherStatus}</span></div><strong>{temperature ?? '—'}{temperature !== undefined && temperature !== null ? '°C' : ''} <span>{condition || 'Conditions unavailable'}</span></strong><p>{weatherRefreshError === 'not_configured' ? 'Weather provider is not configured. ' : weatherRefreshError ? weather ? 'Refresh failed; showing the last stored observation. ' : 'Weather data is unavailable. ' : weather?.error ? `${weather.error} · ` : ''}{weather?.source || 'Open-Meteo'} · Updated {weatherUpdatedLabel(weather)}</p></div>

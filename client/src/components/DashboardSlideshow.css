@@ -1,0 +1,120 @@
+/* Isolated styles for the Executive Dashboard slideshow. */
+.dashboard-slideshow {
+  position: relative;
+  isolation: isolate;
+  min-height: 250px;
+  overflow: hidden;
+  border: 1px solid #dce8df;
+  border-radius: 18px;
+  background: #183e2c;
+  box-shadow: 0 8px 24px #173c2812;
+}
+.dashboard-slideshow-images,
+.dashboard-slideshow-shade { position: absolute; inset: 0; }
+.dashboard-slideshow-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  opacity: 0;
+  transform: scale(1.035);
+  transition: opacity 850ms ease, transform 7.2s ease;
+}
+.dashboard-slideshow-image.is-active { opacity: 1; transform: scale(1); }
+.dashboard-slideshow-shade {
+  z-index: 1;
+  background: linear-gradient(90deg, #10291fe8 0%, #173b2dc9 43%, #173b2d45 78%, #173b2d20 100%),
+    linear-gradient(0deg, #10291f70, transparent 50%);
+}
+.dashboard-slideshow-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 250px;
+  max-width: 690px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 34px 48px;
+  color: #fff;
+}
+.dashboard-slideshow-eyebrow {
+  margin-bottom: 11px;
+  color: #c9f3d5;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1.7px;
+}
+.dashboard-slideshow-content h2 {
+  max-width: 620px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(25px, 3vw, 39px);
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: -.8px;
+  text-wrap: balance;
+}
+.dashboard-slideshow-content p {
+  max-width: 560px;
+  margin: 12px 0 0;
+  color: #edf7ef;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.dashboard-slideshow-controls {
+  position: absolute;
+  z-index: 3;
+  right: 22px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.dashboard-slideshow-controls button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #ffffff75;
+  border-radius: 50%;
+  color: #fff;
+  background: #173b2d70;
+  backdrop-filter: blur(8px);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+.dashboard-slideshow-controls button:hover { background: #ffffff30; transform: translateY(-1px); }
+.dashboard-slideshow-controls button:focus-visible { outline: 2px solid #d3f6db; outline-offset: 3px; }
+.dashboard-slideshow-count {
+  margin-right: 5px;
+  color: #fff;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.dashboard-slideshow-credit {
+  position: absolute;
+  z-index: 2;
+  bottom: 8px;
+  left: 14px;
+  margin: 0;
+  color: #ffffffc7;
+  font-size: 8px;
+  letter-spacing: .25px;
+}
+@media (max-width: 700px) {
+  .dashboard-slideshow { min-height: 245px; border-radius: 14px; }
+  .dashboard-slideshow-content { min-height: 245px; padding: 25px 20px 66px; }
+  .dashboard-slideshow-content h2 { font-size: 27px; }
+  .dashboard-slideshow-content p { max-width: 430px; font-size: 12px; }
+  .dashboard-slideshow-controls { right: 14px; bottom: 22px; gap: 5px; }
+  .dashboard-slideshow-controls button { width: 32px; height: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-slideshow-image,
+  .dashboard-slideshow-controls button { transition: none; }
+  .dashboard-slideshow-image.is-active { transform: none; }
+}
