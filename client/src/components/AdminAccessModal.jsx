@@ -1,11 +1,48 @@
 import React, { useState } from 'react';
-import { KeyRound, ShieldCheck, X, ArrowLeft } from 'lucide-react';
+import { KeyRound, ShieldCheck, X, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import {
   loginAdmin,
   setupAdmin,
   requestAdminPasswordReset,
   resetAdminPassword,
 } from '../services/api';
+
+function PasswordInput({ label, value, onChange, autoComplete, placeholder, required = true, minLength, maxLength = 128 }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <label>
+      {label}
+      <span className="portal-admin-password-wrap" style={{ position: 'relative', display: 'block' }}>
+        <input
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          required={required}
+          minLength={minLength}
+          maxLength={maxLength}
+          style={{ paddingRight: '46px', width: '100%', boxSizing: 'border-box' }}
+        />
+        <button
+          type="button"
+          className="portal-admin-password-toggle"
+          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+          style={{
+            position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            border: 0, background: 'transparent', cursor: 'pointer', padding: '6px',
+            color: 'inherit',
+          }}
+        >
+          {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </span>
+    </label>
+  );
+}
 
 export default function AdminAccessModal({ open, setupRequired, onClose, onAuthenticated }) {
   const resetToken = new URLSearchParams(window.location.search).get('adminReset') || '';
@@ -21,11 +58,18 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
   if (!open) return null;
   const actualMode = setupRequired ? 'setup' : mode;
 
+  const changeMode = (nextMode) => {
+    setMode(nextMode);
+    setError('');
+    setMessage('');
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setError('');
     setMessage('');
 
+    const normalizedEmail = email.trim().toLowerCase();
     if ((actualMode === 'setup' || actualMode === 'reset') && password !== confirmPassword) {
       setError('The password confirmation does not match.');
       return;
@@ -38,19 +82,28 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
     setBusy(true);
     try {
       if (actualMode === 'forgot') {
-        const result = await requestAdminPasswordReset(email.trim());
+        const result = await requestAdminPasswordReset(normalizedEmail);
         setMessage(result.message || 'If an administrator account exists for that email, instructions will be sent shortly.');
       } else if (actualMode === 'reset') {
+        if (!resetToken) {
+          setError('This password-reset link is missing its token. Request a new reset link.');
+          return;
+        }
         const result = await resetAdminPassword(resetToken, password);
         setMessage(result.message || 'Password updated. Sign in with your new password.');
         setPassword('');
         setConfirmPassword('');
-        setMode('login');
-        window.history.replaceState({}, document.title, window.location.pathname);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('adminReset');
+        window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+        changeMode('login');
       } else {
         const result = actualMode === 'setup'
-          ? await setupAdmin({ bootstrapToken: bootstrapToken.trim() || undefined, email, password })
-          : await loginAdmin({ email, password });
+          ? await setupAdmin({ bootstrapToken: bootstrapToken.trim() || undefined, email: normalizedEmail, password })
+          : await loginAdmin({ email: normalizedEmail, password });
+        if (!result?.admin?.email) {
+          throw new Error('The server did not confirm an administrator session. Please try again.');
+        }
         onAuthenticated(result.admin);
         onClose();
       }
@@ -88,30 +141,35 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
         </p>
 
         <form onSubmit={submit} className="portal-admin-form">
-          {(actualMode !== 'reset') && <label>
+          {actualMode !== 'reset' && <label>
             Email address
             <input type="email" value={email} onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmail((current) => current.trim().toLowerCase())}
               autoComplete="username" placeholder="admin@example.com" maxLength={254} required />
           </label>}
 
-          {(actualMode === 'login' || actualMode === 'setup' || actualMode === 'reset') && <label>
-            {actualMode === 'reset' ? 'New password' : 'Password'}
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)}
+          {(actualMode === 'login' || actualMode === 'setup' || actualMode === 'reset') && (
+            <PasswordInput
+              label={actualMode === 'reset' ? 'New password' : 'Password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               autoComplete={actualMode === 'login' ? 'current-password' : 'new-password'}
-              placeholder="At least 8 characters" minLength={8} maxLength={128} required />
-          </label>}
+              placeholder={actualMode === 'login' ? 'Enter your password' : 'At least 8 characters'}
+              minLength={actualMode === 'login' ? undefined : 8}
+            />
+          )}
 
-          {(actualMode === 'setup' || actualMode === 'reset') && <label>
-            Confirm password
-            <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)}
-              autoComplete="new-password" placeholder="Re-enter password" minLength={8} maxLength={128} required />
-          </label>}
+          {(actualMode === 'setup' || actualMode === 'reset') && (
+            <PasswordInput label="Confirm password" value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              autoComplete="new-password" placeholder="Re-enter password" minLength={8} />
+          )}
 
-          {actualMode === 'setup' && <label>
-            Bootstrap token (if configured)
-            <input type="password" value={bootstrapToken} onChange={(event) => setBootstrapToken(event.target.value)}
-              autoComplete="off" placeholder="Optional setup authorization token" />
-          </label>}
+          {actualMode === 'setup' && (
+            <PasswordInput label="Bootstrap token (if configured)" value={bootstrapToken}
+              onChange={(event) => setBootstrapToken(event.target.value)}
+              autoComplete="off" placeholder="Optional setup authorization token" required={false} />
+          )}
 
           {actualMode === 'setup' && <p className="portal-admin-hint">
             <KeyRound size={14} /> Passwords are scrypt-hashed. Initial setup locks after the first administrator is created.
@@ -130,9 +188,9 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
           </div>
         </form>
         {!setupRequired && actualMode === 'login' && <button type="button" className="portal-admin-text-link"
-          onClick={() => { setMode('forgot'); setError(''); setMessage(''); }} disabled={busy}>Forgot password?</button>}
+          onClick={() => changeMode('forgot')} disabled={busy}>Forgot password?</button>}
         {!setupRequired && (actualMode === 'forgot' || actualMode === 'reset') && <button type="button" className="portal-admin-text-link"
-          onClick={() => { setMode('login'); setError(''); setMessage(''); }} disabled={busy}><ArrowLeft size={13} /> Back to sign in</button>}
+          onClick={() => changeMode('login')} disabled={busy}><ArrowLeft size={13} /> Back to sign in</button>}
       </section>
     </div>
   );
