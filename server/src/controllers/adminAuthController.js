@@ -48,7 +48,7 @@ function isDatabaseUnavailable(error) {
 async function authenticate(email, password) {
   try {
     const result = await pool.query(
-      'SELECT id, email, password_hash, password_salt FROM admin_users WHERE email = $1',
+      'SELECT id, email, password_hash, password_salt FROM admin_users WHERE LOWER(email) = $1',
       [email],
     );
     const user = result.rows[0];
@@ -101,6 +101,9 @@ export async function getAdminStatus(req, res) {
     try {
       const countResult = await pool.query('SELECT COUNT(*)::integer AS count FROM admin_users');
       adminCount = countResult.rows[0]?.count ?? 0;
+      // A local fallback account may have been created while PostgreSQL was temporarily unavailable.
+      // Do not force users into first-time setup when that fallback account exists.
+      if (adminCount === 0) adminCount = await getLocalAdminCount();
     } catch (dbError) {
       adminCount = await getLocalAdminCount();
     }
@@ -124,6 +127,14 @@ export async function getAdminStatus(req, res) {
           const cookieToken = getCookie(req, 'irrig_admin_csrf');
           if (cookieToken && safeEqual(hashToken(cookieToken), sessionResult.rows[0].csrf_hash)) {
             csrfToken = cookieToken;
+          }
+        } else {
+          const { findLocalAdminSession } = await import('../services/localAdminStore.js');
+          const localSession = await findLocalAdminSession(tokenHash);
+          if (localSession) {
+            admin = { email: localSession.admin.email };
+            const cookieToken = getCookie(req, 'irrig_admin_csrf');
+            if (cookieToken && safeEqual(hashToken(cookieToken), localSession.csrf_hash)) csrfToken = cookieToken;
           }
         }
       } catch (dbError) {
