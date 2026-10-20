@@ -90,13 +90,13 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
           return;
         }
         const result = await resetAdminPassword(resetToken, password);
-        setMessage(result.message || 'Password updated. Sign in with your new password.');
         setPassword('');
         setConfirmPassword('');
         const url = new URL(window.location.href);
         url.searchParams.delete('adminReset');
         window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
         changeMode('login');
+        setMessage(result.message || 'Password updated. Sign in with your new password.');
       } else {
         const result = actualMode === 'setup'
           ? await setupAdmin({ bootstrapToken: bootstrapToken.trim() || undefined, email: normalizedEmail, password })
