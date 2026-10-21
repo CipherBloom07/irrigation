@@ -108,9 +108,6 @@ async function fetchFeed(feed) {
     };
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-
   try {
     const isWeatherApi = endpoint.hostname.includes('weatherapi.com');
     if (isWeatherApi && feed.key === 'weather' && token) {
@@ -124,16 +121,55 @@ async function fetchFeed(feed) {
       ...(token && !isWeatherApi ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const response = await fetch(endpoint, {
-      headers,
-      signal: controller.signal,
-    });
+    // Open-Meteo can occasionally return transient 429/5xx responses or
+    // brief network failures. Retry only the weather request; never mark a
+    // failed response as live data.
+    const maxAttempts = feed.key === 'weather' ? 3 : 1;
+    let payload;
+    let lastRequestError;
 
-    if (!response.ok) {
-      throw new Error(`Feed returned HTTP ${response.status}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8_000);
+
+      try {
+        const response = await fetch(endpoint, {
+          headers,
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
+          const error = new Error(`Feed returned HTTP ${response.status}`);
+          if (retryable && attempt < maxAttempts) {
+            lastRequestError = error;
+            await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+            continue;
+          }
+          throw error;
+        }
+
+        payload = await response.json();
+        break;
+      } catch (error) {
+        lastRequestError = error.name === 'AbortError'
+          ? new Error('Request timed out')
+          : error;
+
+        if (attempt >= maxAttempts) {
+          throw lastRequestError;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
-    const payload = await response.json();
+    if (!payload) {
+      throw lastRequestError || new Error('Weather provider returned no data');
+    }
     let data = Array.isArray(payload) ? payload : payload.data ?? payload;
 
     // Handle Open-Meteo live feed normalization
@@ -250,8 +286,6 @@ async function fetchFeed(feed) {
       error: safeError,
       data: null,
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
