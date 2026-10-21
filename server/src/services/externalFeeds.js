@@ -286,8 +286,6 @@ async function fetchFeed(feed) {
       error: safeError,
       data: null,
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
