@@ -61,6 +61,22 @@ const feedDefinitions = [
   },
 ];
 
+function getFeedUrl(feed) {
+  const configuredUrl = process.env[feed.env];
+  if (feed.key !== 'weather') return configuredUrl || feed.defaultUrl;
+  if (!configuredUrl) return feed.defaultUrl;
+
+  // Keep the weather integration on Open-Meteo even if an old WeatherAPI
+  // URL remains in Vercel/.env from an earlier configuration.
+  try {
+    return new URL(configuredUrl).hostname === 'api.open-meteo.com'
+      ? configuredUrl
+      : feed.defaultUrl;
+  } catch {
+    return feed.defaultUrl;
+  }
+}
+
 let cache;
 let pendingRefresh;
 
@@ -78,7 +94,7 @@ function weatherCodeToText(code) {
 
 async function fetchFeed(feed) {
   const startedAt = new Date().toISOString();
-  const url = process.env[feed.env] || feed.defaultUrl;
+  const url = getFeedUrl(feed);
   const token = process.env[feed.token];
 
   if (!url) {
