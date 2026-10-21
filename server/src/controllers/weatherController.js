@@ -25,8 +25,6 @@ function getChanceOfRain(payload) {
   let index = times.indexOf(currentTime);
 
   if (index < 0) {
-    // Open-Meteo hourly values and current observations can differ slightly.
-    // Pick the nearest forecast hour rather than incorrectly using index zero.
     const currentMs = Date.parse(currentTime);
     if (Number.isFinite(currentMs)) {
       let smallestDifference = Infinity;
@@ -42,7 +40,9 @@ function getChanceOfRain(payload) {
   }
 
   const value = index >= 0 ? probabilities[index] : null;
-  return Number.isFinite(Number(value)) ? Number(value) : null;
+  return value !== null && value !== undefined && Number.isFinite(Number(value))
+    ? Number(value)
+    : null;
 }
 
 async function requestOpenMeteo() {
