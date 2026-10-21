@@ -4,7 +4,10 @@
   "installCommand": "npm ci --prefix client",
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }],
+  "rewrites": [
+    { "source": "/api/weather", "destination": "/api/weather.js" },
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
