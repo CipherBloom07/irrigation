@@ -46,52 +46,51 @@ async function requestOpenMeteo(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 7000);
   try {
-      const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-        signal: controller.signal,
-      });
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: controller.signal,
+    });
 
-      if (!response.ok) {
-        const error = new Error(`Open-Meteo returned HTTP ${response.status}`);
-        throw error;
-      }
+    if (!response.ok) {
+      throw new Error(`Open-Meteo returned HTTP ${response.status}`);
+    }
 
-      const payload = await response.json();
-      const current = payload?.current;
-      if (!current || !Number.isFinite(Number(current.temperature_2m))) {
-        throw new Error('Open-Meteo response did not contain current weather data');
-      }
+    const payload = await response.json();
+    const current = payload?.current;
+    if (!current || !Number.isFinite(Number(current.temperature_2m))) {
+      throw new Error('Open-Meteo response did not contain current weather data');
+    }
 
-      const receivedAt = new Date().toISOString();
-      return {
-        source: 'Open-Meteo (live forecast)',
-        sourceUpdatedAt: current.time || receivedAt,
-        receivedAt,
-        location: {
-          name: 'Harare & Central Agro-Ecological Basin',
-          region: 'Zimbabwe',
-          country: 'Zimbabwe',
-          lat: payload.latitude ?? -17.8252,
-          lon: payload.longitude ?? 31.0335,
-          tz_id: payload.timezone || 'Africa/Harare',
+    const receivedAt = new Date().toISOString();
+    return {
+      source: 'Open-Meteo (live forecast)',
+      sourceUpdatedAt: current.time || receivedAt,
+      receivedAt,
+      location: {
+        name: 'Harare & Central Agro-Ecological Basin',
+        region: 'Zimbabwe',
+        country: 'Zimbabwe',
+        lat: payload.latitude ?? -17.820738,
+        lon: payload.longitude ?? 31.076626,
+        tz_id: payload.timezone || 'Africa/Harare',
+      },
+      current: {
+        last_updated: current.time || receivedAt,
+        temp_c: current.temperature_2m ?? null,
+        condition: {
+          text: weatherCodeToText(Number(current.weather_code)),
+          code: current.weather_code ?? null,
         },
-        current: {
-          last_updated: current.time || receivedAt,
-          temp_c: current.temperature_2m ?? null,
-          condition: {
-            text: weatherCodeToText(Number(current.weather_code)),
-            code: current.weather_code ?? null,
-          },
-          wind_kph: current.wind_speed_10m ?? null,
-          pressure_mb: current.surface_pressure ?? null,
-          humidity: current.relative_humidity_2m ?? null,
-          chance_of_rain: getChanceOfRain(payload),
-          precip_mm: current.precipitation ?? null,
-        },
-        status: 'online',
-        error: null,
-      };
+        wind_kph: current.wind_speed_10m ?? null,
+        pressure_mb: current.surface_pressure ?? null,
+        humidity: current.relative_humidity_2m ?? null,
+        chance_of_rain: getChanceOfRain(payload),
+        precip_mm: current.precipitation ?? null,
+      },
+      status: 'online',
+      error: null,
+    };
   } catch (error) {
     throw error.name === 'AbortError'
       ? new Error('Open-Meteo request timed out after 7 seconds')
