@@ -167,8 +167,6 @@ export async function getAdminStatus(req, res) {
 }
 
 export async function bootstrapAdmin(req, res) {
-  const bootstrapToken = process.env.ADMIN_BOOTSTRAP_TOKEN;
-  const providedToken = req.body?.bootstrapToken;
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const password = req.body?.password;
 
