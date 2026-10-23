@@ -21,7 +21,9 @@ export async function requestAdminPasswordReset(req, res) {
   const appBaseUrl = process.env.APP_BASE_URL;
   if (!apiKey || !from || !appBaseUrl || (process.env.NODE_ENV === 'production' && !appBaseUrl.startsWith('https://'))) {
     console.warn('Admin password reset email is not configured. Set RESEND_API_KEY, ADMIN_RESET_FROM_EMAIL, and APP_BASE_URL.');
-    return res.json({ message: genericMessage });
+    return res.status(503).json({
+      error: 'Password reset email is not configured yet. The administrator must configure RESEND_API_KEY, ADMIN_RESET_FROM_EMAIL, and APP_BASE_URL in the deployment settings.',
+    });
   }
 
   try {
