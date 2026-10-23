@@ -37,8 +37,32 @@ async function mutateScheme(url, method, data, signal) {
   return res.json();
 }
 async function responseError(res, fallback) {
-  const payload = await res.json().catch(() => ({}));
-  return new Error(payload.error || fallback);
+  const contentType = res.headers.get('content-type') || '';
+  const rawBody = await res.text().catch(() => '');
+  let payload = {};
+  if (rawBody) {
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      // Avoid displaying HTML or server internals in the UI.
+    }
+  }
+
+  if (typeof payload.error === 'string' && payload.error.trim()) {
+    return new Error(payload.error);
+  }
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return new Error(payload.message);
+  }
+
+  if (!contentType.includes('application/json')) {
+    const responseKind = contentType.includes('text/html')
+      ? 'The server returned an HTML page instead of an API response'
+      : 'The server returned an unexpected response format';
+    return new Error(`${responseKind} (HTTP ${res.status}). This usually indicates an API routing or deployment issue; refresh the page and try again.`);
+  }
+
+  return new Error(`${fallback} (HTTP ${res.status}).`);
 }
 export async function fetchAdminStatus({ signal } = {}) {
   const res = await fetch(`${API_BASE}/admin/status`, { cache: 'no-store', credentials: 'same-origin', signal });
