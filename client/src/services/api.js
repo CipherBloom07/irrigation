@@ -94,7 +94,7 @@ export async function fetchTelemetry({ signal, force = false } = {}) {
   return res.json();
 }
 
-const OPEN_METEO_URL = 'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,surface_pressure,weather_code&hourly=precipitation_probability&timezone=Africa%2FHarare';
+const OPEN_METEO_URL = 'https://api.open-meteo.com/v1/forecast?latitude=-17.820738&longitude=31.076626&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,surface_pressure,weather_code&hourly=precipitation_probability&timezone=Africa%2FHarare';
 
 function weatherCodeToText(code) {
   if (code === 0) return 'Clear sky';
