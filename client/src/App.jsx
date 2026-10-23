@@ -775,7 +775,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingScheme, setEditingScheme] = useState(null);
   const [adminModalOpen, setAdminModalOpen] = useState(() => new URLSearchParams(window.location.search).has('adminReset'));
-  const [adminStatus, setAdminStatus] = useState({ setupRequired: false, admin: null });
+  const [adminStatus, setAdminStatus] = useState({ setupRequired: true, admin: null });
   const [notice, setNotice] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
