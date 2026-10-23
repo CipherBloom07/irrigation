@@ -380,7 +380,7 @@ function ExecutiveDashboard({ schemes, telemetry, weather, weatherRefreshError, 
         <div className="portal-weather-icon"><WeatherIcon size={35} strokeWidth={1.7} aria-hidden="true" /></div><div><div className="portal-eyebrow">{weather?.location?.name || 'Zimbabwe'} WEATHER <span className="live-pill">{weatherStatus}</span></div><strong>{temperature ?? '—'}{temperature !== undefined && temperature !== null ? '°C' : ''} <span>{condition || 'Conditions unavailable'}</span></strong><p>{weatherRefreshError === 'not_configured' ? 'Weather provider is not configured. ' : weatherRefreshError ? weather ? 'Refresh failed; showing the last stored observation. ' : 'Weather data is unavailable. ' : weather?.error ? `${weather.error} · ` : ''}{weather?.source || 'Open-Meteo'} · Updated {weatherUpdatedLabel(weather)}</p></div>
       </div>
       <div className="portal-climate-metrics">
-        {weatherMetrics.map(([Icon, label, value, unit]) => <div className="portal-climate-stat" key={label}><span><Icon size={14} />{label}</span><strong>{value === undefined || value === null ? '—' : `${value}${unit}`}</strong><small>{weather?.location?.country || 'WeatherAPI current conditions'}</small></div>)}
+        {weatherMetrics.map(([Icon, label, value, unit]) => <div className="portal-climate-stat" key={label}><span><Icon size={14} />{label}</span><strong>{value === undefined || value === null ? '—' : `${value}${unit}`}</strong><small>{weather?.location?.country || 'Open-Meteo current conditions'}</small></div>)}
       </div>
     </div>
     <IrrigationAdvisor telemetry={telemetry} weather={weather} onViewTelemetry={() => setActiveTab('Water & Telemetry')} />
