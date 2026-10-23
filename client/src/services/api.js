@@ -94,7 +94,8 @@ export async function fetchTelemetry({ signal, force = false } = {}) {
   return res.json();
 }
 
-const OPEN_METEO_URL = 'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,surface_pressure,weather_code&hourly=precipitation_probability&timezone=Africa%2FHarare';
+const OPEN_METEO_URL = 'https://api.open-meteo.com/v1/forecast?latitude=-17.820738&longitude=31.076626&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,surface_pressure,weather_code&hourly=precipitation_probability&timezone=Africa%2FHarare&wind_speed_unit=kmh&forecast_days=1';
+const OPEN_METEO_CURRENT_URL = 'https://api.open-meteo.com/v1/forecast?latitude=-17.820738&longitude=31.076626&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,surface_pressure,weather_code&timezone=Africa%2FHarare&wind_speed_unit=kmh&forecast_days=1';
 
 function weatherCodeToText(code) {
   if (code === 0) return 'Clear sky';
@@ -108,10 +109,26 @@ function weatherCodeToText(code) {
   return 'Weather conditions';
 }
 
-async function fetchBrowserWeather(signal) {
-  const response = await fetch(OPEN_METEO_URL, { cache: 'no-store', headers: { Accept: 'application/json' }, signal });
-  if (!response.ok) throw new Error(`Open-Meteo returned HTTP ${response.status}`);
-  const payload = await response.json();
+async function fetchBrowserWeatherFrom(url, signal, sourceLabel) {
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abortFromCaller();
+  else signal?.addEventListener('abort', abortFromCaller, { once: true });
+  const timeout = window.setTimeout(() => controller.abort(new Error('Weather request timed out')), 9000);
+
+  let payload;
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Open-Meteo returned HTTP ${response.status}`);
+    payload = await response.json();
+  } finally {
+    window.clearTimeout(timeout);
+    signal?.removeEventListener('abort', abortFromCaller);
+  }
   const current = payload?.current;
   if (!current || !Number.isFinite(Number(current.temperature_2m))) {
     throw new Error('Open-Meteo returned an invalid current-weather response');
@@ -134,7 +151,7 @@ async function fetchBrowserWeather(signal) {
   }
   const receivedAt = new Date().toISOString();
   return {
-    source: 'Open-Meteo live (browser fallback)',
+    source: sourceLabel,
     sourceUpdatedAt: current.time || receivedAt,
     receivedAt,
     location: {
@@ -160,6 +177,22 @@ async function fetchBrowserWeather(signal) {
   };
 }
 
+async function fetchBrowserWeather(signal) {
+  try {
+    return await fetchBrowserWeatherFrom(OPEN_METEO_URL, signal, 'Open-Meteo live (browser fallback)');
+  } catch (forecastError) {
+    // If the hourly probability block causes a provider/route error, retry with
+    // only current conditions so the core weather banner can still render.
+    const currentWeather = await fetchBrowserWeatherFrom(
+      OPEN_METEO_CURRENT_URL,
+      signal,
+      'Open-Meteo live current conditions (fallback)',
+    );
+    currentWeather.current.chance_of_rain = null;
+    return currentWeather;
+  }
+}
+
 export async function fetchWeather({ signal, force = false } = {}) {
   let apiError;
   try {
@@ -178,12 +211,11 @@ export async function fetchWeather({ signal, force = false } = {}) {
     apiError = error;
   }
 
-  // Keep the dashboard useful if the Vercel function/rewrite is unavailable.
-  // Open-Meteo is public and supports browser requests; no API key is required.
   try {
     return await fetchBrowserWeather(signal);
   } catch (fallbackError) {
-    console.error('Both server and browser weather requests failed:', { apiError, fallbackError });
+    if (fallbackError.name === 'AbortError') throw fallbackError;
+    console.error('Weather sources failed:', { apiError, fallbackError });
     fallbackError.feedStatus = apiError?.feedStatus || 'error';
     throw fallbackError;
   }
