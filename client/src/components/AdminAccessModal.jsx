@@ -50,7 +50,6 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [bootstrapToken, setBootstrapToken] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -99,7 +98,7 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
         setMessage(result.message || 'Password updated. Sign in with your new password.');
       } else {
         const result = actualMode === 'setup'
-          ? await setupAdmin({ bootstrapToken: bootstrapToken.trim() || undefined, email: normalizedEmail, password })
+          ? await setupAdmin({ email: normalizedEmail, password })
           : await loginAdmin({ email: normalizedEmail, password });
         if (!result?.admin?.email) {
           throw new Error('The server did not confirm an administrator session. Please try again.');
@@ -165,14 +164,8 @@ export default function AdminAccessModal({ open, setupRequired, onClose, onAuthe
               autoComplete="new-password" placeholder="Re-enter password" minLength={8} />
           )}
 
-          {actualMode === 'setup' && (
-            <PasswordInput label="Bootstrap token (if configured)" value={bootstrapToken}
-              onChange={(event) => setBootstrapToken(event.target.value)}
-              autoComplete="off" placeholder="Optional setup authorization token" required={false} />
-          )}
-
           {actualMode === 'setup' && <p className="portal-admin-hint">
-            <KeyRound size={14} /> Passwords are scrypt-hashed. Initial setup locks after the first administrator is created.
+            <KeyRound size={14} /> Passwords are securely hashed. Anyone may claim the initial administrator account; setup locks permanently after the first successful registration.
           </p>}
 
           {error && <p className="portal-admin-error" role="alert">{error}</p>}
