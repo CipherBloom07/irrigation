@@ -5,7 +5,6 @@
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
   "rewrites": [
-    { "source": "/api/weather", "destination": "/api/weather.js" },
     { "source": "/api/(.*)", "destination": "/api" }
   ],
   "headers": [
