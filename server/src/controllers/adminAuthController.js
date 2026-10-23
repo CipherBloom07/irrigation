@@ -172,10 +172,9 @@ export async function bootstrapAdmin(req, res) {
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const password = req.body?.password;
 
-  // If operator configured a bootstrap token, enforce it; otherwise allow first-time setup directly
-  if (bootstrapToken && !safeEqual(providedToken, bootstrapToken)) {
-    return res.status(403).json({ error: 'Setup authorization token is invalid.' });
-  }
+  // Public first-time setup is allowed only while no administrator exists.
+  // The database advisory lock below makes the first successful setup win;
+  // all later attempts receive 409 and must use the sign-in form.
 
   if (!validEmail(email) || !validPassword(password)) {
     return res.status(400).json({ error: 'Enter a valid email address and a password with at least 8 characters.' });
