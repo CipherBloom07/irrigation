@@ -191,8 +191,11 @@ export async function bootstrapAdmin(req, res) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      // Serialize first-admin setup attempts across concurrent serverless requests.
+      await client.query('SELECT pg_advisory_xact_lock($1)', [728194603]);
       const countResult = await client.query('SELECT COUNT(*)::integer AS count FROM admin_users');
-      if (countResult.rows[0].count !== 0) {
+      const localAdminCount = await getLocalAdminCount();
+      if (countResult.rows[0].count !== 0 || localAdminCount !== 0) {
         await client.query('ROLLBACK');
         return res.status(409).json({ error: 'Administrator setup has already been completed. Please log in.' });
       }
@@ -212,6 +215,10 @@ export async function bootstrapAdmin(req, res) {
       client.release();
     }
   } catch (dbError) {
+    if (!isDatabaseUnavailable(dbError)) {
+      console.error('Administrator setup failed:', dbError.message);
+      return res.status(500).json({ error: 'Unable to complete administrator setup. Check the database configuration and try again.' });
+    }
     console.warn('Postgres unavailable during admin setup, using local fallback store:', dbError.message);
     const count = await getLocalAdminCount();
     if (count !== 0) {
