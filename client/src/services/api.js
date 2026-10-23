@@ -161,9 +161,19 @@ async function fetchBrowserWeather(signal) {
 }
 
 export async function fetchWeather({ signal, force = false } = {}) {
+  // The deployed Vercel project builds the client as a static Vite site; it does
+  // not run the Express server automatically. Fetch Open-Meteo directly in
+  // production so a missing /api/weather rewrite cannot take the weather panel offline.
+  if (import.meta.env.PROD) {
+    return fetchBrowserWeather(signal);
+  }
+
   let apiError;
   try {
-    const res = await fetch(`${API_BASE}/weather${refreshQuery(force)}`, { cache: 'no-store', signal });
+    const res = await fetch(`${API_BASE}/weather${refreshQuery(force)}`, {
+      cache: 'no-store',
+      signal,
+    });
     if (!res.ok) {
       const payload = await res.json().catch(() => ({}));
       const error = new Error(payload.message || `Weather endpoint failed (HTTP ${res.status})`);
@@ -178,8 +188,7 @@ export async function fetchWeather({ signal, force = false } = {}) {
     apiError = error;
   }
 
-  // Keep the dashboard useful if the Vercel function/rewrite is unavailable.
-  // Open-Meteo is public and supports browser requests; no API key is required.
+  // Local development can still use the Express API, with a browser fallback.
   try {
     return await fetchBrowserWeather(signal);
   } catch (fallbackError) {
